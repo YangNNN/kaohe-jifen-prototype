@@ -1,0 +1,2561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>考核打卡与积分激励 · 管理后台</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+    background: #f0f2f5;
+    color: rgba(0,0,0,0.85);
+    font-size: 14px;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ========== 极窄左侧图标栏 ========== */
+  .nav-rail {
+    width: 64px;
+    background: #fff;
+    border-right: 1px solid #f0f0f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 0;
+    flex-shrink: 0;
+  }
+  .nav-rail .rail-icon {
+    width: 56px; height: 56px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: rgba(0,0,0,0.65);
+    cursor: pointer;
+    font-size: 11px;
+    gap: 2px;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .nav-rail .rail-icon:hover { background: #f0f5ff; color: #1677ff; }
+  .nav-rail .rail-icon.active { background: #e6f4ff; color: #1677ff; }
+  .nav-rail .rail-icon .glyph { font-size: 18px; line-height: 1; }
+  .nav-rail .rail-spacer { flex: 1; }
+  .nav-rail .rail-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg,#1677ff,#4096ff);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    margin-bottom: 6px;
+    cursor: pointer;
+  }
+  .nav-rail .rail-name { font-size: 11px; color: rgba(0,0,0,0.65); }
+
+  /* ========== 二级菜单 ========== */
+  .subnav {
+    width: 190px;
+    background: #fff;
+    border-right: 1px solid #f0f0f0;
+    padding: 8px 0;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+  .subnav .sub-group {
+    padding: 10px 16px 4px;
+    font-size: 11px;
+    color: rgba(0,0,0,0.45);
+    letter-spacing: 0.5px;
+  }
+  .subnav .sub-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    margin: 0 8px;
+    font-size: 13px;
+    color: rgba(0,0,0,0.65);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .subnav .sub-item:hover { background: #f0f5ff; color: #1677ff; }
+  .subnav .sub-item .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: transparent;
+    flex-shrink: 0;
+  }
+  .subnav .sub-item.has-child .dot { background: #52c41a; }
+  .subnav .sub-item.active {
+    background: #e6f4ff;
+    color: #1677ff;
+    font-weight: 500;
+  }
+  .subnav .sub-item .arrow {
+    margin-left: auto;
+    font-size: 10px;
+    color: rgba(0,0,0,0.35);
+    transition: transform 0.2s;
+  }
+  .subnav .sub-item.expanded .arrow { transform: rotate(90deg); }
+  .subnav .sub-children { padding: 2px 0; }
+  .subnav .sub-child {
+    display: flex;
+    align-items: center;
+    padding: 7px 16px 7px 32px;
+    margin: 0 8px;
+    font-size: 13px;
+    color: rgba(0,0,0,0.65);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+    position: relative;
+    white-space: nowrap;
+  }
+  .subnav .sub-child:hover { background: #f0f5ff; color: #1677ff; }
+  .subnav .sub-child.active {
+    color: #1677ff;
+    font-weight: 500;
+    background: #e6f4ff;
+  }
+  .subnav .sub-child.active::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 6px; bottom: 6px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: #1677ff;
+  }
+
+  /* ========== 主内容区 ========== */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: #f0f2f5;
+  }
+
+  /* 顶部 */
+  .topbar {
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .brand {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(0,0,0,0.85);
+    line-height: 1.3;
+    border-left: 3px solid #1677ff;
+    padding-left: 12px;
+  }
+  .brand small {
+    display: block;
+    font-size: 11px;
+    color: rgba(0,0,0,0.45);
+    font-weight: 400;
+    margin-top: 2px;
+  }
+  .tabs {
+    display: flex;
+    gap: 24px;
+    height: 100%;
+    align-items: stretch;
+  }
+  .tab {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    color: rgba(0,0,0,0.65);
+    cursor: pointer;
+    font-size: 14px;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .tab.visible { display: flex; }
+  .tab .dot { width: 6px; height: 6px; border-radius: 50%; background: transparent; }
+  .tab.active {
+    color: #1677ff;
+    font-weight: 500;
+    border-bottom-color: #1677ff;
+  }
+  .tab.active .dot { background: #1677ff; }
+  .tab:hover { color: #1677ff; }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 13px;
+    color: rgba(0,0,0,0.65);
+  }
+
+  /* 周期切换 tab（积分排名报表） */
+  .cycle-bar {
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 0 24px;
+    display: flex;
+    gap: 32px;
+    height: 42px;
+    align-items: stretch;
+  }
+  .cycle-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: rgba(0,0,0,0.65);
+    cursor: pointer;
+    font-size: 14px;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .cycle-tab .dot { width: 6px; height: 6px; border-radius: 50%; background: transparent; }
+  .cycle-tab:hover { color: #1677ff; }
+  .cycle-tab.active {
+    color: #1677ff;
+    font-weight: 500;
+    border-bottom-color: #1677ff;
+  }
+  .cycle-tab.active .dot { background: #1677ff; }
+
+  /* 筛选区 */
+  .filter-bar {
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .input {
+    background: #f5f5f5;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: rgba(0,0,0,0.85);
+    min-width: 165px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .input:hover { border-color: #1677ff; background: #fff; }
+  .input::before {
+    content: "▾";
+    color: rgba(0,0,0,0.35);
+    font-size: 11px;
+    margin-right: 6px;
+  }
+  .input.text::before { content: ""; margin: 0; }
+  .filter-bar .btn-primary { background: #1677ff; color: #fff; border: 1px solid #1677ff; }
+  .filter-bar .btn-default { background: #fff; color: rgba(0,0,0,0.85); border: 1px solid #d9d9d9; }
+  .filter-bar .btn {
+    height: 32px;
+    padding: 0 18px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .filter-bar .btn-primary:hover { background: #4096ff; border-color: #4096ff; }
+  .filter-bar .btn-default:hover { border-color: #1677ff; color: #1677ff; }
+
+  /* 工具栏 */
+  .toolbar {
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .toolbar-left { display: flex; gap: 10px; }
+  .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 12px;
+    color: rgba(0,0,0,0.65);
+  }
+  .toolbar-right span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .toolbar-right span:hover { color: #1677ff; }
+  .btn {
+    height: 30px;
+    padding: 0 14px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .btn-add { background: #1677ff; color: #fff; border-color: #1677ff; }
+  .btn-add:hover { background: #4096ff; }
+  .btn-del { background: #fff; color: #ff4d4f; border-color: #ff7875; }
+  .btn-del:hover { background: #fff1f0; border-color: #ff4d4f; }
+
+  /* 页面容器 */
+  .page { display: none; }
+  .page.show { display: block; }
+
+  /* 表格 */
+  .table-wrap { background: #fff; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    background: #fafafa;
+    color: rgba(0,0,0,0.85);
+    font-weight: 500;
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    color: rgba(0,0,0,0.85);
+    white-space: nowrap;
+  }
+  tbody tr { cursor: pointer; transition: background 0.2s; }
+  tbody tr:hover { background: #fafafa; }
+  tbody tr.active { background: #e6f4ff; }
+  .muted { color: rgba(0,0,0,0.35); }
+
+  /* 标签 */
+  .tag-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    background: #f0f5ff;
+    color: #1677ff;
+    border: 1px solid #adc6ff;
+    margin-right: 4px;
+  }
+  .tag-pill.gray { background: #fafafa; color: rgba(0,0,0,0.65); border-color: #d9d9d9; }
+  .tag-pill.green { background: #f6ffed; color: #52c41a; border-color: #b7eb8f; }
+  .tag-pill.orange { background: #fff7e6; color: #fa8c16; border-color: #ffd591; }
+  .tag-pill.red { background: #fff1f0; color: #ff4d4f; border-color: #ffa39e; }
+  .tag-pill.purple { background: #f9f0ff; color: #722ed1; border-color: #d3adf7; }
+
+  .pos { color: #52c41a; font-weight: 600; }
+  .neg { color: #ff4d4f; font-weight: 600; }
+  .strong { font-weight: 600; }
+
+  .actions a {
+    color: #1677ff;
+    margin-right: 10px;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .actions a:hover { text-decoration: underline; }
+  .actions a.del { color: #ff4d4f; }
+  .num-link { color: #1677ff; text-decoration: underline; cursor: pointer; }
+  .num-link:hover { color: #4096ff; }
+  .detail-value { padding: 6px 0 2px; color: rgba(0,0,0,0.85); font-size: 14px; }
+
+  /* 考核打分 / 考核结果详情抽屉：三层目录考核表 */
+  #drawer-pending, #drawer-resultDetail { width: 600px; }
+  #drawer-pending table th,
+  #drawer-pending table td,
+  #drawer-resultDetail table th,
+  #drawer-resultDetail table td { padding: 10px 10px; white-space: normal; vertical-align: middle; }
+  #drawer-pending td.lv1, #drawer-resultDetail td.lv1 { font-weight: 600; background: #fafafa; width: 84px; }
+  #drawer-pending td.lv2, #drawer-resultDetail td.lv2 { font-weight: 500; color: rgba(0,0,0,0.65); width: 90px; }
+  .result-val {
+    display: inline-block;
+    min-width: 40px;
+    padding: 2px 10px;
+    border-radius: 4px;
+    background: rgba(22,119,255,0.10);
+    color: #1677ff;
+    font-weight: 600;
+    font-size: 13px;
+    text-align: center;
+  }
+  .result-val.no { background: rgba(0,0,0,0.04); color: rgba(0,0,0,0.55); font-weight: 400; }
+  .score-input {
+    width: 120px; height: 30px;
+    border: 1px solid #d9d9d9; border-radius: 4px;
+    padding: 0 10px; font-size: 13px;
+    background: #fff; color: rgba(0,0,0,0.85);
+    font-family: inherit; transition: all 0.2s;
+  }
+  .score-input:focus {
+    outline: none; border-color: #1677ff;
+    box-shadow: 0 0 0 2px rgba(22,119,255,0.08);
+  }
+  .score-input::placeholder { color: rgba(0,0,0,0.25); }
+
+  /* 分页 */
+  .pagination {
+    background: #fff;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    color: rgba(0,0,0,0.65);
+  }
+  .pagination-left { display: flex; align-items: center; gap: 12px; }
+  .pagination-left .clear { color: #1677ff; cursor: pointer; }
+  .pagination-right { display: flex; align-items: center; gap: 8px; }
+  .pagination-right select {
+    height: 28px;
+    padding: 0 8px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+  }
+  .pagination-right .page-btn {
+    width: 28px; height: 28px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    cursor: pointer;
+    color: rgba(0,0,0,0.65);
+  }
+  .pagination-right .page-btn.active { background: #1677ff; border-color: #1677ff; color: #fff; }
+  .pagination-right .page-btn:hover:not(.active) { border-color: #1677ff; color: #1677ff; }
+  .pagination-right .goto { margin-left: 8px; display: flex; align-items: center; gap: 6px; }
+  .pagination-right .goto input {
+    width: 50px; height: 28px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+
+  /* ========== 抽屉弹窗（新增/编辑表单） ========== */
+  .drawer-mask {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: none;
+    z-index: 100;
+  }
+  .drawer-mask.show { display: block; }
+  .drawer {
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: 460px;
+    background: #fff;
+    z-index: 101;
+    display: none;
+    flex-direction: column;
+    box-shadow: -2px 0 8px rgba(0,0,0,0.15);
+  }
+  .drawer.show { display: flex; }
+  .drawer-header {
+    height: 56px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .drawer-title { font-size: 16px; font-weight: 600; color: rgba(0,0,0,0.85); }
+  .drawer-close { cursor: pointer; color: rgba(0,0,0,0.45); font-size: 16px; line-height: 1; }
+  .drawer-close:hover { color: #1677ff; }
+  .drawer-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+  .drawer-footer {
+    padding: 12px 24px;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  .drawer-footer .btn { height: 32px; padding: 0 20px; }
+  .drawer-footer .btn-ok { background: #1677ff; color: #fff; border-color: #1677ff; }
+  .drawer-footer .btn-ok:hover { background: #4096ff; }
+  .drawer-footer .btn-cancel { background: #fff; color: rgba(0,0,0,0.65); border-color: #d9d9d9; }
+  .drawer-footer .btn-cancel:hover { border-color: #1677ff; color: #1677ff; }
+
+  /* 表单控件 */
+  .form-row { display: flex; gap: 14px; }
+  .form-item { flex: 1; margin-bottom: 18px; min-width: 0; }
+  .form-item label {
+    display: block;
+    font-size: 13px;
+    color: rgba(0,0,0,0.85);
+    margin-bottom: 6px;
+  }
+  .form-item label i { color: #ff4d4f; font-style: normal; margin-right: 2px; }
+  .form-item input,
+  .form-item select,
+  .form-item textarea {
+    width: 100%;
+    height: 32px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    padding: 0 10px;
+    font-size: 13px;
+    background: #fafafa;
+    color: rgba(0,0,0,0.85);
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .form-item textarea { height: 64px; padding: 8px 10px; resize: none; line-height: 1.5; }
+  .form-item input:focus,
+  .form-item select:focus,
+  .form-item textarea:focus {
+    outline: none;
+    border-color: #1677ff;
+    background: #fff;
+    box-shadow: 0 0 0 2px rgba(22,119,255,0.08);
+  }
+  .form-item .hint { font-size: 11px; color: rgba(0,0,0,0.45); margin-top: 4px; }
+  .check-group { display: flex; flex-wrap: wrap; gap: 12px; padding-top: 4px; }
+  .check-group label {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    color: rgba(0,0,0,0.85);
+    cursor: pointer;
+    margin: 0 !important;
+  }
+  .check-group input { width: 14px; height: 14px; margin: 0; cursor: pointer; accent-color: #1677ff; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-12px);
+    background: rgba(0,0,0,0.75);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s;
+    z-index: 99;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- 极窄左侧图标栏 -->
+<aside class="nav-rail">
+  <div class="rail-icon active"><span class="glyph">⚙️</span><span>运营</span></div>
+  <div class="rail-spacer"></div>
+  <div class="rail-avatar">超</div>
+  <div class="rail-name">超管者</div>
+</aside>
+
+<!-- 二级菜单 -->
+<aside class="subnav">
+  <div class="sub-group">考核管理</div>
+
+  <div class="sub-item has-child expanded">
+    <span class="dot"></span>考核规则
+    <span class="arrow">▸</span>
+  </div>
+  <div class="sub-children">
+    <div class="sub-child active" data-page="freq">考核频率</div>
+    <div class="sub-child" data-page="catalog">考核目录</div>
+    <div class="sub-child" data-page="template">考核模板</div>
+    <div class="sub-child" data-page="pending">待考核项</div>
+    <div class="sub-child" data-page="result">考核结果</div>
+  </div>
+
+  <div class="sub-item has-child expanded" style="margin-top:6px;">
+    <span class="dot"></span>积分激励
+    <span class="arrow">▸</span>
+  </div>
+  <div class="sub-children">
+    <div class="sub-child" data-page="event">事件中心</div>
+    <div class="sub-child" data-page="engine">积分引擎</div>
+    <div class="sub-child" data-page="detail">积分明细</div>
+    <div class="sub-child" data-page="prize">奖品配置</div>
+    <div class="sub-child" data-page="rank">积分排名报表</div>
+    <div class="sub-child" data-page="deliver">奖品发放记录</div>
+  </div>
+
+  <div class="sub-item has-child expanded" style="margin-top:6px;">
+    <span class="dot"></span>基础数据
+    <span class="arrow">▸</span>
+  </div>
+  <div class="sub-children">
+    <div class="sub-child" data-page="emp">员工管理</div>
+    <div class="sub-child" data-page="dept">部门管理</div>
+  </div>
+</aside>
+
+<!-- 主内容 -->
+<div class="main">
+  <!-- 顶部 tab 栏 -->
+  <div class="topbar">
+    <div class="brand">
+      考核打卡与积分激励
+      <small id="brandSub">考核规则 · 管理后台 v1.0</small>
+    </div>
+    <div style="display:flex;align-items:center;gap:32px;height:100%;">
+      <div class="tabs">
+        <div class="tab visible active" data-page="freq" data-module="rule"><span class="dot"></span>考核频率</div>
+        <div class="tab visible" data-page="catalog" data-module="rule">考核目录</div>
+        <div class="tab visible" data-page="template" data-module="rule">考核模板</div>
+        <div class="tab visible" data-page="pending" data-module="rule">待考核项</div>
+        <div class="tab visible" data-page="result" data-module="rule">考核结果</div>
+        <div class="tab" data-page="event" data-module="point">事件中心</div>
+        <div class="tab" data-page="engine" data-module="point">积分引擎</div>
+        <div class="tab" data-page="detail" data-module="point">积分明细</div>
+        <div class="tab" data-page="prize" data-module="point">奖品配置</div>
+        <div class="tab" data-page="rank" data-module="point">积分排名报表</div>
+        <div class="tab" data-page="deliver" data-module="point">奖品发放记录</div>
+        <div class="tab" data-page="emp" data-module="base">员工管理</div>
+        <div class="tab" data-page="dept" data-module="base">部门管理</div>
+      </div>
+      <div class="topbar-right"><span>👤 管理员</span></div>
+    </div>
+  </div>
+
+  <!-- ============ 1. 考核频率 ============ -->
+  <div class="page show" id="page-freq">
+    <div class="filter-bar">
+      <div class="input">选择考核类型</div>
+      <div class="input text">请输入频率名称</div>
+      <div class="input text">请输入创建人</div>
+      <button class="btn btn-primary">筛选</button>
+      <button class="btn btn-default">重置</button>
+    </div>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn btn-add" data-drawer="freq">+ 新增</button><button class="btn btn-del">删除</button>
+      </div>
+      <div class="toolbar-right">
+        <span>🔄 刷新</span><span>📋 字段管理</span><span>🔍 筛选</span>
+        <span>⇅ 排序</span><span>⛶ 行高</span><span>⬇ 导出数据</span><span>⛶ 切换全屏</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px;"><input type="checkbox"></th>
+            <th>频率名称</th><th>频率说明</th><th>创建时间</th><th>创建人</th>
+            <th style="width:180px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>每日</td>
+            <td>按天统计考核，适合高频日常习惯打卡</td>
+            <td>2026-08-20 13:54:41</td><td>管理员</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>每周</td>
+            <td>按周统计考核，适合周期性任务打卡</td>
+            <td>2026-08-18 17:07:29</td><td>管理员</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>每月</td>
+            <td>按月统计考核，适合月度目标类打卡</td>
+            <td>2026-07-23 09:19:28</td><td>管理员</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <div class="pagination-left"><span>已选 0 条</span><span class="clear">清空</span></div>
+      <div class="pagination-right">
+        <span>共 3 条</span><select><option>20条/页</option><option>50条/页</option></select>
+        <div class="page-btn">‹</div><div class="page-btn active">1</div><div class="page-btn">›</div>
+        <div class="goto">前往 <input value="1"> 页</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 2. 考核目录 ============ -->
+  <div class="page" id="page-catalog">
+    <div class="filter-bar">
+      <div class="input text">请输入目录名称</div>
+      <div class="input">选择父级目录</div>
+      <div class="input">选择数据类型</div>
+      <button class="btn btn-primary">筛选</button><button class="btn btn-default">重置</button>
+    </div>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn btn-add" data-drawer="catalog">+ 新增</button><button class="btn btn-del">删除</button>
+      </div>
+      <div class="toolbar-right">
+        <span>🔄 刷新</span><span>📋 字段管理</span><span>🔍 筛选</span>
+        <span>⇅ 排序</span><span>⛶ 行高</span><span>⬇ 导出数据</span><span>⛶ 切换全屏</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px;"><input type="checkbox"></th>
+            <th>目录名称</th><th>父级目录</th><th>数据类型</th><th>数据范围</th>
+            <th style="width:80px;">排序</th><th style="width:140px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><strong>工作纪律</strong></td><td class="muted">—</td><td class="muted">—</td><td class="muted">—</td><td>1</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>&nbsp;&nbsp;└ 出勤情况</td><td>工作纪律</td><td class="muted">—</td><td class="muted">—</td><td>1</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>&nbsp;&nbsp;&nbsp;&nbsp;└ 打卡率</td><td>出勤情况</td>
+            <td><span class="tag-pill">数据范围</span></td><td>0 ~ 100</td><td>1</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>&nbsp;&nbsp;&nbsp;&nbsp;└ 是否迟到</td><td>出勤情况</td>
+            <td><span class="tag-pill">布尔</span></td><td class="muted">—</td><td>2</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>&nbsp;&nbsp;└ 任务完成</td><td>工作纪律</td><td class="muted">—</td><td class="muted">—</td><td>2</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>&nbsp;&nbsp;&nbsp;&nbsp;└ 任务完成率</td><td>任务完成</td>
+            <td><span class="tag-pill">数据范围</span></td><td>0 ~ 100</td><td>1</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><strong>服务质量</strong></td><td class="muted">—</td><td class="muted">—</td><td class="muted">—</td><td>2</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>&nbsp;&nbsp;└ 客户评价</td><td>服务质量</td><td class="muted">—</td><td class="muted">—</td><td>1</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>&nbsp;&nbsp;&nbsp;&nbsp;└ 满意度评分</td><td>客户评价</td>
+            <td><span class="tag-pill">数据范围</span></td><td>1 ~ 5</td><td>1</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <div class="pagination-left"><span>已选 0 条</span><span class="clear">清空</span></div>
+      <div class="pagination-right">
+        <span>共 9 条</span><select><option>20条/页</option><option>50条/页</option></select>
+        <div class="page-btn">‹</div><div class="page-btn active">1</div><div class="page-btn">›</div>
+        <div class="goto">前往 <input value="1"> 页</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 3. 考核模板 ============ -->
+  <div class="page" id="page-template">
+    <div class="filter-bar">
+      <div class="input text">请输入模板名称</div>
+      <div class="input">选择考核频率</div>
+      <div class="input">选择考核对象</div>
+      <button class="btn btn-primary">筛选</button><button class="btn btn-default">重置</button>
+    </div>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn btn-add" data-drawer="template">+ 新增</button><button class="btn btn-del">删除</button>
+      </div>
+      <div class="toolbar-right">
+        <span>🔄 刷新</span><span>📋 字段管理</span><span>🔍 筛选</span>
+        <span>⇅ 排序</span><span>⛶ 行高</span><span>⬇ 导出数据</span><span>⛶ 切换全屏</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px;"><input type="checkbox"></th>
+            <th>模板名称</th><th style="width:110px;">考核频率</th><th>考核目录</th>
+            <th>考核对象</th><th>考核人</th><th style="width:140px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><strong>日常考勤模板</strong></td>
+            <td><span class="tag-pill">每日</span></td>
+            <td><span class="tag-pill gray">出勤情况</span><span class="tag-pill gray">打卡率</span><span class="tag-pill gray">是否迟到</span></td>
+            <td>张三、李四、王五</td><td>赵管理</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><strong>周度任务模板</strong></td>
+            <td><span class="tag-pill">每周</span></td>
+            <td><span class="tag-pill gray">工作纪律</span><span class="tag-pill gray">任务完成</span><span class="tag-pill gray">任务完成率</span></td>
+            <td>张三、李四</td><td>赵管理</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><strong>月度绩效模板</strong></td>
+            <td><span class="tag-pill">每月</span></td>
+            <td><span class="tag-pill gray">工作纪律</span><span class="tag-pill gray">出勤情况</span><span class="tag-pill gray">服务质量</span></td>
+            <td>王五、赵六、孙七</td><td>钱总监</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><strong>服务质量月度模板</strong></td>
+            <td><span class="tag-pill">每月</span></td>
+            <td><span class="tag-pill gray">客户评价</span><span class="tag-pill gray">满意度评分</span></td>
+            <td>赵六、孙七</td><td>钱总监</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <div class="pagination-left"><span>已选 0 条</span><span class="clear">清空</span></div>
+      <div class="pagination-right">
+        <span>共 4 条</span><select><option>20条/页</option><option>50条/页</option></select>
+        <div class="page-btn">‹</div><div class="page-btn active">1</div><div class="page-btn">›</div>
+        <div class="goto">前往 <input value="1"> 页</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 4. 待考核项 ============ -->
+  <div class="page" id="page-pending">
+    <div class="filter-bar">
+      <div class="input text">请输入编号</div>
+      <div class="input">选择考核周期</div>
+      <div class="input text">请输入考核对象</div>
+      <button class="btn btn-primary">筛选</button>
+      <button class="btn btn-default">重置</button>
+    </div>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn" data-toast="已对所选待考核项发起批量考核" style="background:#fff;color:rgba(0,0,0,0.65);border-color:#d9d9d9;">批量考核</button>
+      </div>
+      <div class="toolbar-right">
+        <span>🔄 刷新</span><span>📋 字段管理</span><span>🔍 筛选</span>
+        <span>⇅ 排序</span><span>⛶ 行高</span><span>⬇ 导出数据</span><span>⛶ 切换全屏</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px;"><input type="checkbox"></th>
+            <th>编号</th><th style="width:100px;">考核周期</th><th>考核对象</th>
+            <th>考核目录</th><th>打分人</th><th>创建时间</th><th style="width:100px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><strong>KH-20260901-001</strong></td>
+            <td><span class="tag-pill">每日</span></td>
+            <td>张三</td><td>工作纪律</td><td>王主管</td>
+            <td>2026-09-01 09:00:00</td>
+            <td class="actions"><a data-drawer="pending">考核</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><strong>KH-20260901-002</strong></td>
+            <td><span class="tag-pill">每日</span></td>
+            <td>李四</td><td>出勤情况</td><td>王主管</td>
+            <td>2026-09-01 09:05:00</td>
+            <td class="actions"><a data-drawer="pending">考核</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><strong>KH-20260831-011</strong></td>
+            <td><span class="tag-pill">每周</span></td>
+            <td>赵六</td><td>任务完成</td><td>钱总监</td>
+            <td>2026-08-31 17:30:00</td>
+            <td class="actions"><a data-drawer="pending">考核</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><strong>KH-20260831-012</strong></td>
+            <td><span class="tag-pill">每周</span></td>
+            <td>王五</td><td>服务质量</td><td>钱总监</td>
+            <td>2026-08-31 17:35:00</td>
+            <td class="actions"><a data-drawer="pending">考核</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><strong>KH-20260801-003</strong></td>
+            <td><span class="tag-pill">每月</span></td>
+            <td>孙七</td><td>客户评价</td><td>赵管理</td>
+            <td>2026-08-01 10:00:00</td>
+            <td class="actions"><a data-drawer="pending">考核</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <div class="pagination-left"><span>已选 0 条</span><span class="clear">清空</span></div>
+      <div class="pagination-right">
+        <span>共 5 条</span><select><option>20条/页</option><option>50条/页</option></select>
+        <div class="page-btn">‹</div><div class="page-btn active">1</div><div class="page-btn">›</div>
+        <div class="goto">前往 <input value="1"> 页</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 5. 考核结果 ============ -->
+  <div class="page" id="page-result">
+    <div class="cycle-bar">
+      <div class="cycle-tab active" data-status="已提交"><span class="dot"></span>已提交</div>
+      <div class="cycle-tab" data-status="已确认">已确认</div>
+    </div>
+    <div class="filter-bar">
+      <div class="input text">请输入编号</div>
+      <div class="input">选择考核周期</div>
+      <div class="input text">请输入打分人</div>
+      <button class="btn btn-primary">筛选</button>
+      <button class="btn btn-default">重置</button>
+    </div>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn" data-toast="报表导出中…" style="background:#fff;color:rgba(0,0,0,0.65);border-color:#d9d9d9;">导出结果</button>
+      </div>
+      <div class="toolbar-right">
+        <span>🔄 刷新</span><span>📋 字段管理</span><span>🔍 筛选</span>
+        <span>⇅ 排序</span><span>⛶ 行高</span><span>⬇ 导出数据</span><span>⛶ 切换全屏</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px;"><input type="checkbox"></th>
+            <th>编号</th><th style="width:100px;">考核周期</th><th>考核对象</th>
+            <th>考核目录</th><th>打分人</th><th>打分时间</th><th>创建时间</th><th style="width:130px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- 已提交 -->
+          <tr data-status="已提交">
+            <td><input type="checkbox"></td>
+            <td><a class="num-link" data-drawer="resultDetail">KH-20260901-001</a></td>
+            <td><span class="tag-pill">每日</span></td>
+            <td>张三</td><td>工作纪律</td><td>王主管</td>
+            <td>2026-09-01 14:20:00</td><td>2026-09-01 09:00:00</td>
+            <td class="actions"><a data-toast="考核结果已确认">确认</a><a data-drawer="resultDetail">详情</a></td>
+          </tr>
+          <tr data-status="已提交">
+            <td><input type="checkbox"></td>
+            <td><a class="num-link" data-drawer="resultDetail">KH-20260901-002</a></td>
+            <td><span class="tag-pill">每日</span></td>
+            <td>李四</td><td>出勤情况</td><td>王主管</td>
+            <td>2026-09-01 15:10:00</td><td>2026-09-01 09:05:00</td>
+            <td class="actions"><a data-toast="考核结果已确认">确认</a><a data-drawer="resultDetail">详情</a></td>
+          </tr>
+          <tr data-status="已提交">
+            <td><input type="checkbox"></td>
+            <td><a class="num-link" data-drawer="resultDetail">KH-20260831-011</a></td>
+            <td><span class="tag-pill">每周</span></td>
+            <td>赵六</td><td>任务完成</td><td>钱总监</td>
+            <td>2026-08-31 18:00:00</td><td>2026-08-31 17:30:00</td>
+            <td class="actions"><a data-toast="考核结果已确认">确认</a><a data-drawer="resultDetail">详情</a></td>
+          </tr>
+          <!-- 已确认 -->
+          <tr data-status="已确认" style="display:none;">
+            <td><input type="checkbox"></td>
+            <td><a class="num-link" data-drawer="resultDetail">KH-20260831-012</a></td>
+            <td><span class="tag-pill">每周</span></td>
+            <td>王五</td><td>服务质量</td><td>钱总监</td>
+            <td>2026-08-31 18:30:00</td><td>2026-08-31 17:35:00</td>
+            <td class="actions"><a data-drawer="resultDetail">详情</a></td>
+          </tr>
+          <tr data-status="已确认" style="display:none;">
+            <td><input type="checkbox"></td>
+            <td><a class="num-link" data-drawer="resultDetail">KH-20260815-007</a></td>
+            <td><span class="tag-pill">每月</span></td>
+            <td>张三</td><td>任务完成</td><td>赵管理</td>
+            <td>2026-08-15 09:40:00</td><td>2026-08-15 09:00:00</td>
+            <td class="actions"><a data-drawer="resultDetail">详情</a></td>
+          </tr>
+          <tr data-status="已确认" style="display:none;">
+            <td><input type="checkbox"></td>
+            <td><a class="num-link" data-drawer="resultDetail">KH-20260801-003</a></td>
+            <td><span class="tag-pill">每月</span></td>
+            <td>孙七</td><td>客户评价</td><td>赵管理</td>
+            <td>2026-08-01 11:00:00</td><td>2026-08-01 10:00:00</td>
+            <td class="actions"><a data-drawer="resultDetail">详情</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <div class="pagination-left"><span>已选 0 条</span><span class="clear">清空</span></div>
+      <div class="pagination-right">
+        <span id="resultCount">共 3 条</span><select><option>20条/页</option><option>50条/页</option></select>
+        <div class="page-btn">‹</div><div class="page-btn active">1</div><div class="page-btn">›</div>
+        <div class="goto">前往 <input value="1"> 页</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 6. 事件中心 ============ -->
+  <div class="page" id="page-event">
+    <div class="filter-bar">
+      <div class="input text">请输入事件编号</div>
+      <div class="input">选择事件来源</div>
+      <div class="input">选择审核状态</div>
+      <button class="btn btn-primary">筛选</button><button class="btn btn-default">重置</button>
+    </div>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn btn-add" data-drawer="event">+ 新增</button><button class="btn btn-del">删除</button>
+      </div>
+      <div class="toolbar-right">
+        <span>🔄 刷新</span><span>📋 字段管理</span><span>🔍 筛选</span>
+        <span>⇅ 排序</span><span>⛶ 行高</span><span>⬇ 导出数据</span><span>⛶ 切换全屏</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px;"><input type="checkbox"></th>
+            <th>事件编号</th><th>事件内容</th><th style="width:100px;">事件来源</th>
+            <th style="width:100px;">审核状态</th><th style="width:90px;">业务类型</th>
+            <th style="width:90px;">技能等级</th><th style="width:90px;">事件人员</th>
+            <th>创建时间</th><th style="width:140px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>EV20260901001</td><td>完成A产品装配任务</td>
+            <td><span class="tag-pill">ERP</span></td>
+            <td><span class="tag-pill green">已通过</span></td>
+            <td>装配</td><td><span class="tag-pill purple">高级</span></td><td>张三</td>
+            <td>2026-09-01 10:23:15</td>
+            <td class="actions"><a>审核</a><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>EV20260901002</td><td>质量检验合格率达标</td>
+            <td><span class="tag-pill">MES</span></td>
+            <td><span class="tag-pill orange">待审核</span></td>
+            <td>质检</td><td><span class="tag-pill purple">中级</span></td><td>李四</td>
+            <td>2026-09-01 09:45:02</td>
+            <td class="actions"><a>审核</a><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>EV20260831015</td><td>月度生产任务超额完成</td>
+            <td><span class="tag-pill gray">手动</span></td>
+            <td><span class="tag-pill green">已通过</span></td>
+            <td>生产</td><td><span class="tag-pill purple">初级</span></td><td>王五</td>
+            <td>2026-08-31 16:30:44</td>
+            <td class="actions"><a>审核</a><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>EV20260831008</td><td>设备故障及时上报</td>
+            <td><span class="tag-pill">MES</span></td>
+            <td><span class="tag-pill red">已驳回</span></td>
+            <td>维修</td><td><span class="tag-pill purple">高级</span></td><td>赵六</td>
+            <td>2026-08-31 14:12:09</td>
+            <td class="actions"><a>审核</a><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>EV20260830021</td><td>新人带教任务完成</td>
+            <td><span class="tag-pill gray">手动</span></td>
+            <td><span class="tag-pill orange">待审核</span></td>
+            <td>培训</td><td><span class="tag-pill purple">中级</span></td><td>孙七</td>
+            <td>2026-08-30 11:20:33</td>
+            <td class="actions"><a>审核</a><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <div class="pagination-left"><span>已选 0 条</span><span class="clear">清空</span></div>
+      <div class="pagination-right">
+        <span>共 5 条</span><select><option>20条/页</option><option>50条/页</option></select>
+        <div class="page-btn">‹</div><div class="page-btn active">1</div><div class="page-btn">›</div>
+        <div class="goto">前往 <input value="1"> 页</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 7. 积分引擎 ============ -->
+  <div class="page" id="page-engine">
+    <div class="filter-bar">
+      <div class="input">选择业务类型</div>
+      <div class="input">选择技能等级</div>
+      <div class="input">选择版本号</div>
+      <button class="btn btn-primary">筛选</button><button class="btn btn-default">重置</button>
+    </div>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn btn-add" data-drawer="engine">+ 新增</button><button class="btn btn-del">删除</button>
+      </div>
+      <div class="toolbar-right">
+        <span>🔄 刷新</span><span>📋 字段管理</span><span>🔍 筛选</span>
+        <span>⇅ 排序</span><span>⛶ 行高</span><span>⬇ 导出数据</span><span>⛶ 切换全屏</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px;"><input type="checkbox"></th>
+            <th>业务类型</th><th>技能等级</th><th>版本号</th>
+            <th>积分值</th><th>积分上限</th><th>积分下限</th><th>有效天数</th>
+            <th style="width:140px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><strong>装配</strong></td><td><span class="tag-pill purple">高级</span></td>
+            <td><span class="tag-pill">V1.0</span></td>
+            <td class="pos">10</td><td>100</td><td>0</td><td>365</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><strong>装配</strong></td><td><span class="tag-pill purple">中级</span></td>
+            <td><span class="tag-pill">V1.0</span></td>
+            <td class="pos">8</td><td>80</td><td>0</td><td>365</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><strong>质检</strong></td><td><span class="tag-pill purple">高级</span></td>
+            <td><span class="tag-pill">V1.2</span></td>
+            <td class="pos">12</td><td>120</td><td>0</td><td>180</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><strong>生产</strong></td><td><span class="tag-pill purple">初级</span></td>
+            <td><span class="tag-pill">V1.0</span></td>
+            <td class="pos">5</td><td>50</td><td>0</td><td>90</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><strong>维修</strong></td><td><span class="tag-pill purple">高级</span></td>
+            <td><span class="tag-pill">V1.1</span></td>
+            <td class="pos">15</td><td>150</td><td>0</td><td>180</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><strong>培训</strong></td><td><span class="tag-pill purple">中级</span></td>
+            <td><span class="tag-pill">V1.0</span></td>
+            <td class="pos">6</td><td>60</td><td>0</td><td>365</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <div class="pagination-left"><span>已选 0 条</span><span class="clear">清空</span></div>
+      <div class="pagination-right">
+        <span>共 6 条</span><select><option>20条/页</option><option>50条/页</option></select>
+        <div class="page-btn">‹</div><div class="page-btn active">1</div><div class="page-btn">›</div>
+        <div class="goto">前往 <input value="1"> 页</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 8. 积分明细 ============ -->
+  <div class="page" id="page-detail">
+    <div class="filter-bar">
+      <div class="input text">请输入人员名称</div>
+      <div class="input">选择积分类型</div>
+      <div class="input">选择创建时间</div>
+      <button class="btn btn-primary">筛选</button><button class="btn btn-default">重置</button>
+    </div>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn btn-add" data-drawer="detail">+ 新增</button><button class="btn btn-del">删除</button>
+      </div>
+      <div class="toolbar-right">
+        <span>🔄 刷新</span><span>📋 字段管理</span><span>🔍 筛选</span>
+        <span>⇅ 排序</span><span>⛶ 行高</span><span>⬇ 导出数据</span><span>⛶ 切换全屏</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px;"><input type="checkbox"></th>
+            <th>人员名称</th><th style="width:120px;">积分值</th>
+            <th>过期时间</th><th>创建时间</th><th style="width:140px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="checkbox"></td><td>张三</td>
+            <td class="pos">+10</td><td>2027-08-31</td><td>2026-09-01 10:23:15</td>
+            <td class="actions"><a>详情</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td><td>李四</td>
+            <td class="pos">+8</td><td>2027-02-27</td><td>2026-09-01 09:45:02</td>
+            <td class="actions"><a>详情</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td><td>王五</td>
+            <td class="neg">-5</td><td class="muted">—</td><td>2026-08-31 16:30:44</td>
+            <td class="actions"><a>详情</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td><td>张三</td>
+            <td class="pos">+12</td><td>2027-02-27</td><td>2026-08-30 11:20:33</td>
+            <td class="actions"><a>详情</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td><td>赵六</td>
+            <td class="pos">+15</td><td>2027-02-26</td><td>2026-08-29 15:08:21</td>
+            <td class="actions"><a>详情</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td><td>孙七</td>
+            <td class="pos">+6</td><td>2027-08-30</td><td>2026-08-28 09:33:47</td>
+            <td class="actions"><a>详情</a><a class="del">删除</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <div class="pagination-left"><span>已选 0 条</span><span class="clear">清空</span></div>
+      <div class="pagination-right">
+        <span>共 6 条</span><select><option>20条/页</option><option>50条/页</option></select>
+        <div class="page-btn">‹</div><div class="page-btn active">1</div><div class="page-btn">›</div>
+        <div class="goto">前往 <input value="1"> 页</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 9. 奖品配置 ============ -->
+  <div class="page" id="page-prize">
+    <div class="filter-bar">
+      <div class="input">选择奖品周期</div>
+      <div class="input">选择奖品类型</div>
+      <div class="input text">请输入奖品名称</div>
+      <button class="btn btn-primary">筛选</button><button class="btn btn-default">重置</button>
+    </div>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn btn-add" data-drawer="prize">+ 新增</button><button class="btn btn-del">删除</button>
+      </div>
+      <div class="toolbar-right">
+        <span>🔄 刷新</span><span>📋 字段管理</span><span>🔍 筛选</span>
+        <span>⇅ 排序</span><span>⛶ 行高</span><span>⬇ 导出数据</span><span>⛶ 切换全屏</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px;"><input type="checkbox"></th>
+            <th style="width:100px;">奖品周期</th><th style="width:100px;">奖品类型</th>
+            <th>奖品名称</th><th style="width:80px;">数量</th>
+            <th style="width:120px;">排名段</th><th style="width:140px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><span class="tag-pill">月度</span></td><td><span class="tag-pill purple">虚拟</span></td>
+            <td><strong>100积分券</strong></td><td>50</td><td><span class="tag-pill green">1-5</span></td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><span class="tag-pill">月度</span></td><td><span class="tag-pill orange">实物</span></td>
+            <td><strong>品牌保温杯</strong></td><td>20</td><td><span class="tag-pill gray">6-20</span></td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><span class="tag-pill">季度</span></td><td><span class="tag-pill orange">实物</span></td>
+            <td><strong>蓝牙耳机</strong></td><td>10</td><td><span class="tag-pill green">1-5</span></td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><span class="tag-pill">季度</span></td><td><span class="tag-pill purple">虚拟</span></td>
+            <td><strong>500积分券</strong></td><td>30</td><td><span class="tag-pill gray">6-20</span></td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><span class="tag-pill">年度</span></td><td><span class="tag-pill orange">实物</span></td>
+            <td><strong>智能手表</strong></td><td>3</td><td><span class="tag-pill green">1-5</span></td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <div class="pagination-left"><span>已选 0 条</span><span class="clear">清空</span></div>
+      <div class="pagination-right">
+        <span>共 5 条</span><select><option>20条/页</option><option>50条/页</option></select>
+        <div class="page-btn">‹</div><div class="page-btn active">1</div><div class="page-btn">›</div>
+        <div class="goto">前往 <input value="1"> 页</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 10. 积分排名报表 ============ -->
+  <div class="page" id="page-rank">
+    <div class="cycle-bar">
+      <div class="cycle-tab active" data-cycle="月度"><span class="dot"></span>月度</div>
+      <div class="cycle-tab" data-cycle="季度">季度</div>
+      <div class="cycle-tab" data-cycle="年度">年度</div>
+    </div>
+
+    <div class="filter-bar">
+      <div class="input text">请输入人员名称</div>
+      <div class="input">选择统计时间</div>
+      <div class="input">选择排名段</div>
+      <button class="btn btn-primary">筛选</button><button class="btn btn-default">重置</button>
+    </div>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn btn-add" data-drawer="rank">重新计算</button>
+        <button class="btn" data-toast="报表导出中…" style="background:#fff;color:rgba(0,0,0,0.65);border-color:#d9d9d9;">导出报表</button>
+      </div>
+      <div class="toolbar-right">
+        <span>🔄 刷新</span><span>📋 字段管理</span><span>🔍 筛选</span>
+        <span>⇅ 排序</span><span>⛶ 行高</span><span>⬇ 导出数据</span><span>⛶ 切换全屏</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px;"><input type="checkbox"></th>
+            <th>人员名称</th><th style="width:100px;">周期类型</th>
+            <th style="width:110px;">排名名次</th><th style="width:110px;">排名段</th>
+            <th style="width:100px;">总积分</th><th>计算时间</th><th style="width:140px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- 月度 -->
+          <tr data-cycle="月度">
+            <td><input type="checkbox"></td><td><strong>张三</strong></td>
+            <td><span class="tag-pill">月度</span></td>
+            <td><strong>第 1 名</strong></td><td><span class="tag-pill green">1-5</span></td>
+            <td class="pos">285</td><td>2026-09-01 08:00:00</td>
+            <td class="actions"><a>详情</a><a>导出</a></td>
+          </tr>
+          <tr data-cycle="月度">
+            <td><input type="checkbox"></td><td><strong>李四</strong></td>
+            <td><span class="tag-pill">月度</span></td>
+            <td><strong>第 2 名</strong></td><td><span class="tag-pill green">1-5</span></td>
+            <td class="pos">260</td><td>2026-09-01 08:00:00</td>
+            <td class="actions"><a>详情</a><a>导出</a></td>
+          </tr>
+          <tr data-cycle="月度">
+            <td><input type="checkbox"></td><td><strong>赵六</strong></td>
+            <td><span class="tag-pill">月度</span></td>
+            <td><strong>第 5 名</strong></td><td><span class="tag-pill green">1-5</span></td>
+            <td class="pos">198</td><td>2026-09-01 08:00:00</td>
+            <td class="actions"><a>详情</a><a>导出</a></td>
+          </tr>
+          <tr data-cycle="月度">
+            <td><input type="checkbox"></td><td><strong>王五</strong></td>
+            <td><span class="tag-pill">月度</span></td>
+            <td><strong>第 7 名</strong></td><td><span class="tag-pill gray">6-20</span></td>
+            <td class="pos">180</td><td>2026-09-01 08:00:00</td>
+            <td class="actions"><a>详情</a><a>导出</a></td>
+          </tr>
+          <tr data-cycle="月度">
+            <td><input type="checkbox"></td><td><strong>孙七</strong></td>
+            <td><span class="tag-pill">月度</span></td>
+            <td><strong>第 12 名</strong></td><td><span class="tag-pill gray">6-20</span></td>
+            <td class="pos">145</td><td>2026-09-01 08:00:00</td>
+            <td class="actions"><a>详情</a><a>导出</a></td>
+          </tr>
+          <!-- 季度 -->
+          <tr data-cycle="季度" style="display:none;">
+            <td><input type="checkbox"></td><td><strong>张三</strong></td>
+            <td><span class="tag-pill">季度</span></td>
+            <td><strong>第 1 名</strong></td><td><span class="tag-pill green">1-5</span></td>
+            <td class="pos">820</td><td>2026-07-01 08:00:00</td>
+            <td class="actions"><a>详情</a><a>导出</a></td>
+          </tr>
+          <tr data-cycle="季度" style="display:none;">
+            <td><input type="checkbox"></td><td><strong>李四</strong></td>
+            <td><span class="tag-pill">季度</span></td>
+            <td><strong>第 3 名</strong></td><td><span class="tag-pill green">1-5</span></td>
+            <td class="pos">705</td><td>2026-07-01 08:00:00</td>
+            <td class="actions"><a>详情</a><a>导出</a></td>
+          </tr>
+          <tr data-cycle="季度" style="display:none;">
+            <td><input type="checkbox"></td><td><strong>王五</strong></td>
+            <td><span class="tag-pill">季度</span></td>
+            <td><strong>第 8 名</strong></td><td><span class="tag-pill gray">6-20</span></td>
+            <td class="pos">512</td><td>2026-07-01 08:00:00</td>
+            <td class="actions"><a>详情</a><a>导出</a></td>
+          </tr>
+          <!-- 年度 -->
+          <tr data-cycle="年度" style="display:none;">
+            <td><input type="checkbox"></td><td><strong>张三</strong></td>
+            <td><span class="tag-pill">年度</span></td>
+            <td><strong>第 1 名</strong></td><td><span class="tag-pill green">1-5</span></td>
+            <td class="pos">3150</td><td>2026-01-01 08:00:00</td>
+            <td class="actions"><a>详情</a><a>导出</a></td>
+          </tr>
+          <tr data-cycle="年度" style="display:none;">
+            <td><input type="checkbox"></td><td><strong>李四</strong></td>
+            <td><span class="tag-pill">年度</span></td>
+            <td><strong>第 2 名</strong></td><td><span class="tag-pill green">1-5</span></td>
+            <td class="pos">2870</td><td>2026-01-01 08:00:00</td>
+            <td class="actions"><a>详情</a><a>导出</a></td>
+          </tr>
+          <tr data-cycle="年度" style="display:none;">
+            <td><input type="checkbox"></td><td><strong>赵六</strong></td>
+            <td><span class="tag-pill">年度</span></td>
+            <td><strong>第 4 名</strong></td><td><span class="tag-pill green">1-5</span></td>
+            <td class="pos">2260</td><td>2026-01-01 08:00:00</td>
+            <td class="actions"><a>详情</a><a>导出</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <div class="pagination-left"><span>已选 0 条</span><span class="clear">清空</span></div>
+      <div class="pagination-right">
+        <span id="rankCount">共 5 条</span><select><option>20条/页</option><option>50条/页</option></select>
+        <div class="page-btn">‹</div><div class="page-btn active">1</div><div class="page-btn">›</div>
+        <div class="goto">前往 <input value="1"> 页</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 11. 奖品发放记录 ============ -->
+  <div class="page" id="page-deliver">
+    <div class="filter-bar">
+      <div class="input text">请输入发放人</div>
+      <div class="input text">请输入奖品名称</div>
+      <div class="input">选择发放周期</div>
+      <button class="btn btn-primary">筛选</button><button class="btn btn-default">重置</button>
+    </div>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn btn-add" data-drawer="deliver">+ 新增</button><button class="btn btn-del">删除</button>
+      </div>
+      <div class="toolbar-right">
+        <span>🔄 刷新</span><span>📋 字段管理</span><span>🔍 筛选</span>
+        <span>⇅ 排序</span><span>⛶ 行高</span><span>⬇ 导出数据</span><span>⛶ 切换全屏</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px;"><input type="checkbox"></th>
+            <th>发放人</th><th>奖品名称</th><th style="width:90px;">奖品数量</th>
+            <th>发放时间</th><th style="width:100px;">发放周期</th><th style="width:140px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="checkbox"></td><td>赵管理</td>
+            <td><strong>100积分券</strong></td><td>5</td>
+            <td>2026-09-01 09:00:00</td><td><span class="tag-pill">月度</span></td>
+            <td class="actions"><a>详情</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td><td>赵管理</td>
+            <td><strong>品牌保温杯</strong></td><td>2</td>
+            <td>2026-08-01 09:30:00</td><td><span class="tag-pill">月度</span></td>
+            <td class="actions"><a>详情</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td><td>钱总监</td>
+            <td><strong>蓝牙耳机</strong></td><td>1</td>
+            <td>2026-07-01 10:00:00</td><td><span class="tag-pill">季度</span></td>
+            <td class="actions"><a>详情</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td><td>钱总监</td>
+            <td><strong>500积分券</strong></td><td>8</td>
+            <td>2026-07-01 10:05:00</td><td><span class="tag-pill">季度</span></td>
+            <td class="actions"><a>详情</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td><td>钱总监</td>
+            <td><strong>智能手表</strong></td><td>1</td>
+            <td>2026-01-15 14:20:00</td><td><span class="tag-pill">年度</span></td>
+            <td class="actions"><a>详情</a><a class="del">删除</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <div class="pagination-left"><span>已选 0 条</span><span class="clear">清空</span></div>
+      <div class="pagination-right">
+        <span>共 5 条</span><select><option>20条/页</option><option>50条/页</option></select>
+        <div class="page-btn">‹</div><div class="page-btn active">1</div><div class="page-btn">›</div>
+        <div class="goto">前往 <input value="1"> 页</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 12. 员工管理 ============ -->
+  <div class="page" id="page-emp">
+    <div class="filter-bar">
+      <div class="input text">请输入工号</div>
+      <div class="input text">请输入姓名</div>
+      <div class="input">选择部门</div>
+      <button class="btn btn-primary">筛选</button><button class="btn btn-default">重置</button>
+    </div>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn btn-add" data-drawer="emp">+ 新增</button><button class="btn btn-del">删除</button>
+      </div>
+      <div class="toolbar-right">
+        <span>🔄 刷新</span><span>📋 字段管理</span><span>🔍 筛选</span>
+        <span>⇅ 排序</span><span>⛶ 行高</span><span>⬇ 导出数据</span><span>⛶ 切换全屏</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px;"><input type="checkbox"></th>
+            <th style="width:120px;">工号</th><th>姓名</th><th>部门</th>
+            <th style="width:140px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><span class="num-link">EMP-001</span></td><td>张三</td><td>生产部</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><span class="num-link">EMP-002</span></td><td>李四</td><td>技术部</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><span class="num-link">EMP-003</span></td><td>王五</td><td>市场部</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><span class="num-link">EMP-004</span></td><td>赵六</td><td>人事部</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><span class="num-link">EMP-005</span></td><td>孙七</td><td>财务部</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <div class="pagination-left"><span>已选 0 条</span><span class="clear">清空</span></div>
+      <div class="pagination-right">
+        <span>共 5 条</span><select><option>20条/页</option><option>50条/页</option></select>
+        <div class="page-btn">‹</div><div class="page-btn active">1</div><div class="page-btn">›</div>
+        <div class="goto">前往 <input value="1"> 页</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 13. 部门管理 ============ -->
+  <div class="page" id="page-dept">
+    <div class="filter-bar">
+      <div class="input text">请输入部门名称</div>
+      <button class="btn btn-primary">筛选</button><button class="btn btn-default">重置</button>
+    </div>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn btn-add" data-drawer="dept">+ 新增</button><button class="btn btn-del">删除</button>
+      </div>
+      <div class="toolbar-right">
+        <span>🔄 刷新</span><span>📋 字段管理</span><span>🔍 筛选</span>
+        <span>⇅ 排序</span><span>⛶ 行高</span><span>⬇ 导出数据</span><span>⛶ 切换全屏</span>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px;"><input type="checkbox"></th>
+            <th style="width:90px;">序号</th><th>部门名称</th>
+            <th style="width:140px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>1</td><td>生产部</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>2</td><td>技术部</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>3</td><td>市场部</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>4</td><td>人事部</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td>5</td><td>财务部</td>
+            <td class="actions"><a>编辑</a><a class="del">删除</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <div class="pagination-left"><span>已选 0 条</span><span class="clear">清空</span></div>
+      <div class="pagination-right">
+        <span>共 5 条</span><select><option>20条/页</option><option>50条/页</option></select>
+        <div class="page-btn">‹</div><div class="page-btn active">1</div><div class="page-btn">›</div>
+        <div class="goto">前往 <input value="1"> 页</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 抽屉：新增考核频率 ============ -->
+<div class="drawer-mask" id="mask-freq" data-close="freq"></div>
+<div class="drawer" id="drawer-freq">
+  <div class="drawer-header">
+    <span class="drawer-title">新增考核频率</span>
+    <span class="drawer-close" data-close="freq">✕</span>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <div class="form-item">
+        <label><i>*</i>频率名称</label>
+        <select>
+          <option>每日</option><option>每周</option><option>每月</option>
+        </select>
+      </div>
+      <div class="form-item">
+        <label><i>*</i>排序</label>
+        <input placeholder="请输入排序号" value="1">
+      </div>
+    </div>
+    <div class="form-item">
+      <label><i>*</i>频率说明</label>
+      <textarea placeholder="请输入频率说明，如：按天统计考核"></textarea>
+    </div>
+    <div class="form-item">
+      <label><i>*</i>状态</label>
+      <select>
+        <option>启用</option>
+        <option>停用</option>
+      </select>
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-cancel" data-close="freq">取消</button>
+    <button class="btn btn-ok" data-close="freq" data-ok="考核频率">确定</button>
+  </div>
+</div>
+
+<!-- ============ 抽屉：新增考核目录 ============ -->
+<div class="drawer-mask" id="mask-catalog" data-close="catalog"></div>
+<div class="drawer" id="drawer-catalog">
+  <div class="drawer-header">
+    <span class="drawer-title">新增考核目录</span>
+    <span class="drawer-close" data-close="catalog">✕</span>
+  </div>
+  <div class="drawer-body">
+    <div class="form-item">
+      <label><i>*</i>目录名称</label>
+      <input placeholder="请输入目录名称">
+    </div>
+    <div class="form-row">
+      <div class="form-item">
+        <label>父级目录</label>
+        <select>
+          <option>无（一级目录）</option>
+          <option>工作纪律</option>
+          <option>出勤情况</option>
+          <option>任务完成</option>
+          <option>服务质量</option>
+          <option>客户评价</option>
+        </select>
+      </div>
+      <div class="form-item">
+        <label><i>*</i>目录层级</label>
+        <select id="catalogLevel">
+          <option>一级目录</option>
+          <option>二级目录</option>
+          <option>三级目录</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row" id="dataTypeRow" style="display:none;">
+      <div class="form-item">
+        <label>数据类型</label>
+        <select id="dataTypeSel">
+          <option>无</option>
+          <option>布尔</option>
+          <option>数据范围</option>
+        </select>
+        <div class="hint">仅第三级目录可设置</div>
+      </div>
+      <div class="form-item" id="dataRangeItem" style="display:none;">
+        <label>数据范围</label>
+        <input placeholder="如：0 ~ 100">
+      </div>
+    </div>
+    <div class="form-item">
+      <label><i>*</i>排序</label>
+      <input placeholder="请输入排序号" value="1">
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-cancel" data-close="catalog">取消</button>
+    <button class="btn btn-ok" data-close="catalog" data-ok="考核目录">确定</button>
+  </div>
+</div>
+
+<!-- ============ 抽屉：新增考核模板 ============ -->
+<div class="drawer-mask" id="mask-template" data-close="template"></div>
+<div class="drawer" id="drawer-template">
+  <div class="drawer-header">
+    <span class="drawer-title">新增考核模板</span>
+    <span class="drawer-close" data-close="template">✕</span>
+  </div>
+  <div class="drawer-body">
+    <div class="form-item">
+      <label><i>*</i>模板名称</label>
+      <input placeholder="请输入模板名称">
+    </div>
+    <div class="form-item">
+      <label><i>*</i>考核频率</label>
+      <select>
+        <option>每日</option>
+        <option>每周</option>
+        <option>每月</option>
+      </select>
+    </div>
+    <div class="form-item">
+      <label><i>*</i>考核目录（可多选）</label>
+      <div class="check-group">
+        <label><input type="checkbox">工作纪律</label>
+        <label><input type="checkbox">出勤情况</label>
+        <label><input type="checkbox">打卡率</label>
+        <label><input type="checkbox">是否迟到</label>
+        <label><input type="checkbox">任务完成</label>
+        <label><input type="checkbox">服务质量</label>
+      </div>
+    </div>
+    <div class="form-item">
+      <label><i>*</i>考核对象（可多选）</label>
+      <div class="check-group">
+        <label><input type="checkbox">张三</label>
+        <label><input type="checkbox">李四</label>
+        <label><input type="checkbox">王五</label>
+        <label><input type="checkbox">赵六</label>
+        <label><input type="checkbox">孙七</label>
+      </div>
+    </div>
+    <div class="form-item">
+      <label><i>*</i>考核人（可多选）</label>
+      <div class="check-group">
+        <label><input type="checkbox">赵管理</label>
+        <label><input type="checkbox">钱总监</label>
+      </div>
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-cancel" data-close="template">取消</button>
+    <button class="btn btn-ok" data-close="template" data-ok="考核模板">确定</button>
+  </div>
+</div>
+
+<!-- ============ 抽屉：新增事件 ============ -->
+<div class="drawer-mask" id="mask-event" data-close="event"></div>
+<div class="drawer" id="drawer-event">
+  <div class="drawer-header">
+    <span class="drawer-title">新增事件</span>
+    <span class="drawer-close" data-close="event">✕</span>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <div class="form-item">
+        <label><i>*</i>事件编号</label>
+        <input placeholder="如：EV20260901001">
+      </div>
+      <div class="form-item">
+        <label><i>*</i>事件来源</label>
+        <select>
+          <option>ERP</option>
+          <option>MES</option>
+          <option>手动</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-item">
+      <label><i>*</i>事件内容</label>
+      <textarea placeholder="请输入事件内容"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-item">
+        <label><i>*</i>业务类型</label>
+        <select>
+          <option>装配</option>
+          <option>质检</option>
+          <option>生产</option>
+          <option>维修</option>
+          <option>培训</option>
+        </select>
+      </div>
+      <div class="form-item">
+        <label><i>*</i>技能等级</label>
+        <select>
+          <option>初级</option>
+          <option>中级</option>
+          <option>高级</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-item">
+        <label><i>*</i>事件人员</label>
+        <input placeholder="请输入人员姓名">
+      </div>
+      <div class="form-item">
+        <label>审核状态</label>
+        <select>
+          <option>待审核</option>
+          <option>已通过</option>
+          <option>已驳回</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-item">
+      <label>创建时间</label>
+      <input type="datetime-local" value="2026-09-01T10:00">
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-cancel" data-close="event">取消</button>
+    <button class="btn btn-ok" data-close="event" data-ok="事件">确定</button>
+  </div>
+</div>
+
+<!-- ============ 抽屉：新增积分规则（积分引擎） ============ -->
+<div class="drawer-mask" id="mask-engine" data-close="engine"></div>
+<div class="drawer" id="drawer-engine">
+  <div class="drawer-header">
+    <span class="drawer-title">新增积分规则</span>
+    <span class="drawer-close" data-close="engine">✕</span>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <div class="form-item">
+        <label><i>*</i>业务类型</label>
+        <select>
+          <option>装配</option>
+          <option>质检</option>
+          <option>生产</option>
+          <option>维修</option>
+          <option>培训</option>
+        </select>
+      </div>
+      <div class="form-item">
+        <label><i>*</i>技能等级</label>
+        <select>
+          <option>初级</option>
+          <option>中级</option>
+          <option>高级</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-item">
+        <label><i>*</i>版本号</label>
+        <input placeholder="如：V1.0">
+      </div>
+      <div class="form-item">
+        <label><i>*</i>积分值</label>
+        <input placeholder="如：10">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-item">
+        <label>积分上限</label>
+        <input placeholder="如：100">
+      </div>
+      <div class="form-item">
+        <label>积分下限</label>
+        <input placeholder="如：0">
+      </div>
+    </div>
+    <div class="form-item">
+      <label><i>*</i>有效天数</label>
+      <input placeholder="如：365">
+      <div class="hint">积分自发放日起的有效期，过期自动失效</div>
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-cancel" data-close="engine">取消</button>
+    <button class="btn btn-ok" data-close="engine" data-ok="积分规则">确定</button>
+  </div>
+</div>
+
+<!-- ============ 抽屉：新增积分明细 ============ -->
+<div class="drawer-mask" id="mask-detail" data-close="detail"></div>
+<div class="drawer" id="drawer-detail">
+  <div class="drawer-header">
+    <span class="drawer-title">新增积分记录</span>
+    <span class="drawer-close" data-close="detail">✕</span>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <div class="form-item">
+        <label><i>*</i>人员名称</label>
+        <input placeholder="请输入人员姓名">
+      </div>
+      <div class="form-item">
+        <label><i>*</i>积分类型</label>
+        <select>
+          <option>奖励</option>
+          <option>扣减</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-item">
+      <label><i>*</i>积分值</label>
+      <input placeholder="请输入积分值，如：10">
+      <div class="hint">扣减类型请填写负数，如：-5</div>
+    </div>
+    <div class="form-row">
+      <div class="form-item">
+        <label>过期时间</label>
+        <input type="date" value="2027-08-31">
+      </div>
+      <div class="form-item">
+        <label>创建时间</label>
+        <input type="date" value="2026-09-01">
+      </div>
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-cancel" data-close="detail">取消</button>
+    <button class="btn btn-ok" data-close="detail" data-ok="积分记录">确定</button>
+  </div>
+</div>
+
+<!-- ============ 抽屉：新增奖品（奖品配置） ============ -->
+<div class="drawer-mask" id="mask-prize" data-close="prize"></div>
+<div class="drawer" id="drawer-prize">
+  <div class="drawer-header">
+    <span class="drawer-title">新增奖品</span>
+    <span class="drawer-close" data-close="prize">✕</span>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <div class="form-item">
+        <label><i>*</i>奖品周期</label>
+        <select>
+          <option>月度</option>
+          <option>季度</option>
+          <option>年度</option>
+        </select>
+      </div>
+      <div class="form-item">
+        <label><i>*</i>奖品类型</label>
+        <select>
+          <option>虚拟</option>
+          <option>实物</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-item">
+      <label><i>*</i>奖品名称</label>
+      <input placeholder="请输入奖品名称">
+    </div>
+    <div class="form-row">
+      <div class="form-item">
+        <label><i>*</i>数量</label>
+        <input placeholder="如：50">
+      </div>
+      <div class="form-item">
+        <label><i>*</i>排名段</label>
+        <select>
+          <option>1-5</option>
+          <option>6-20</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-cancel" data-close="prize">取消</button>
+    <button class="btn btn-ok" data-close="prize" data-ok="奖品">确定</button>
+  </div>
+</div>
+
+<!-- ============ 抽屉：重新计算排名 ============ -->
+<div class="drawer-mask" id="mask-rank" data-close="rank"></div>
+<div class="drawer" id="drawer-rank">
+  <div class="drawer-header">
+    <span class="drawer-title">重新计算排名</span>
+    <span class="drawer-close" data-close="rank">✕</span>
+  </div>
+  <div class="drawer-body">
+    <div class="form-item">
+      <label><i>*</i>周期类型</label>
+      <select>
+        <option>月度</option>
+        <option>季度</option>
+        <option>年度</option>
+      </select>
+    </div>
+    <div class="form-item">
+      <label><i>*</i>统计时间</label>
+      <input type="month" value="2026-09">
+      <div class="hint">按所选周期统计该时间范围内的积分数据</div>
+    </div>
+    <div class="form-item">
+      <label><i>*</i>计算范围</label>
+      <select>
+        <option>全部人员</option>
+        <option>指定部门</option>
+        <option>指定人员</option>
+      </select>
+    </div>
+    <div class="form-item">
+      <label>备注</label>
+      <textarea placeholder="选填，可填写本次计算说明"></textarea>
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-cancel" data-close="rank">取消</button>
+    <button class="btn btn-ok" data-close="rank" data-ok="排名计算">确定</button>
+  </div>
+</div>
+
+<!-- ============ 抽屉：新增发放记录 ============ -->
+<div class="drawer-mask" id="mask-deliver" data-close="deliver"></div>
+<div class="drawer" id="drawer-deliver">
+  <div class="drawer-header">
+    <span class="drawer-title">新增发放记录</span>
+    <span class="drawer-close" data-close="deliver">✕</span>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <div class="form-item">
+        <label><i>*</i>发放人</label>
+        <input placeholder="请输入发放人姓名">
+      </div>
+      <div class="form-item">
+        <label><i>*</i>发放周期</label>
+        <select>
+          <option>月度</option>
+          <option>季度</option>
+          <option>年度</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-item">
+      <label><i>*</i>奖品名称</label>
+      <select>
+        <option>100积分券</option>
+        <option>500积分券</option>
+        <option>品牌保温杯</option>
+        <option>蓝牙耳机</option>
+        <option>智能手表</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-item">
+        <label><i>*</i>奖品数量</label>
+        <input placeholder="如：5">
+      </div>
+      <div class="form-item">
+        <label><i>*</i>发放时间</label>
+        <input type="date" value="2026-09-01">
+      </div>
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-cancel" data-close="deliver">取消</button>
+    <button class="btn btn-ok" data-close="deliver" data-ok="发放记录">确定</button>
+  </div>
+</div>
+
+<!-- ============ 抽屉：考核打分（待考核项） ============ -->
+<div class="drawer-mask" id="mask-pending" data-close="pending"></div>
+<div class="drawer" id="drawer-pending">
+  <div class="drawer-header">
+    <span class="drawer-title">考核打分</span>
+    <span class="drawer-close" data-close="pending">✕</span>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <div class="form-item">
+        <label>编号</label>
+        <div class="detail-value">KH-20260901-001</div>
+      </div>
+      <div class="form-item">
+        <label>考核对象</label>
+        <div class="detail-value">张三</div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-item">
+        <label>考核周期</label>
+        <div class="detail-value">每日考核</div>
+      </div>
+      <div class="form-item">
+        <label>考核目录</label>
+        <div class="detail-value">工作纪律</div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-item">
+        <label>打分人</label>
+        <div class="detail-value">王主管</div>
+      </div>
+    </div>
+    <div class="form-item">
+      <label>考核内容<span style="font-weight:400;color:rgba(0,0,0,0.45);">（按考核目录三层结构加载）</span></label>
+      <div class="table-wrap" style="border:1px solid #f0f0f0;border-radius:4px;">
+        <table>
+          <thead>
+            <tr>
+              <th>一级目录</th><th>二级目录</th><th>考核内容</th>
+              <th>数据类型</th><th>数据范围</th><th>考核结果</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="lv1" rowspan="3">工作纪律</td>
+              <td class="lv2" rowspan="2">出勤情况</td>
+              <td>打卡率（%）</td>
+              <td><span class="tag-pill">数据范围</span></td>
+              <td>0 ~ 100</td>
+              <td><input type="text" class="score-input" placeholder="请输入 0~100"></td>
+            </tr>
+            <tr>
+              <td>是否迟到</td>
+              <td><span class="tag-pill">布尔</span></td>
+              <td class="muted">—</td>
+              <td><input type="checkbox"></td>
+            </tr>
+            <tr>
+              <td class="lv2">任务完成</td>
+              <td>任务完成率（%）</td>
+              <td><span class="tag-pill">数据范围</span></td>
+              <td>0 ~ 100</td>
+              <td><input type="text" class="score-input" placeholder="请输入 0~100"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="form-item">
+      <label>备注</label>
+      <textarea placeholder="请输入备注"></textarea>
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-cancel" data-toast="考核内容已保存（草稿）">保存</button>
+    <button class="btn btn-ok" data-close="pending" data-ok="考核评分">提交</button>
+  </div>
+</div>
+
+<!-- ============ 抽屉：考核结果详情 ============ -->
+<div class="drawer-mask" id="mask-resultDetail" data-close="resultDetail"></div>
+<div class="drawer" id="drawer-resultDetail">
+  <div class="drawer-header">
+    <span class="drawer-title">考核结果详情</span>
+    <span class="drawer-close" data-close="resultDetail">✕</span>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <div class="form-item">
+        <label>编号</label>
+        <div class="detail-value">KH-20260901-001</div>
+      </div>
+      <div class="form-item">
+        <label>状态</label>
+        <div class="detail-value"><span class="tag-pill orange">已提交</span></div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-item">
+        <label>考核周期</label>
+        <div class="detail-value">每日考核</div>
+      </div>
+      <div class="form-item">
+        <label>考核对象</label>
+        <div class="detail-value">张三</div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-item">
+        <label>考核目录</label>
+        <div class="detail-value">工作纪律</div>
+      </div>
+      <div class="form-item">
+        <label>打分人</label>
+        <div class="detail-value">王主管</div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-item">
+        <label>考核评分</label>
+        <div class="detail-value"><strong>优秀</strong></div>
+      </div>
+      <div class="form-item">
+        <label>打分时间</label>
+        <div class="detail-value">2026-09-01 14:20:00</div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-item">
+        <label>创建时间</label>
+        <div class="detail-value">2026-09-01 09:00:00</div>
+      </div>
+    </div>
+    <div class="form-item">
+      <label>考核内容<span style="font-weight:400;color:rgba(0,0,0,0.45);">（按考核目录三层结构加载）</span></label>
+      <div class="table-wrap" style="border:1px solid #f0f0f0;border-radius:4px;">
+        <table>
+          <thead>
+            <tr>
+              <th>一级目录</th><th>二级目录</th><th>考核内容</th>
+              <th>数据类型</th><th>数据范围</th><th>考核结果</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="lv1" rowspan="3">工作纪律</td>
+              <td class="lv2" rowspan="2">出勤情况</td>
+              <td>打卡率（%）</td>
+              <td><span class="tag-pill">数据范围</span></td>
+              <td>0 ~ 100</td>
+              <td><span class="result-val">95%</span></td>
+            </tr>
+            <tr>
+              <td>是否迟到</td>
+              <td><span class="tag-pill">布尔</span></td>
+              <td class="muted">—</td>
+              <td><span class="result-val">是</span></td>
+            </tr>
+            <tr>
+              <td class="lv2">任务完成</td>
+              <td>任务完成率（%）</td>
+              <td><span class="tag-pill">数据范围</span></td>
+              <td>0 ~ 100</td>
+              <td><span class="result-val">88%</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="form-item">
+      <label>备注</label>
+      <div class="detail-value">工作纪律表现优秀，全勤无迟到，值得表扬。</div>
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-cancel" data-close="resultDetail">关闭</button>
+  </div>
+</div>
+
+<!-- ============ 抽屉：新增员工（员工管理） ============ -->
+<div class="drawer-mask" id="mask-emp" data-close="emp"></div>
+<div class="drawer" id="drawer-emp">
+  <div class="drawer-header">
+    <span class="drawer-title">新增员工</span>
+    <span class="drawer-close" data-close="emp">✕</span>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <div class="form-item">
+        <label><i>*</i>工号</label>
+        <input placeholder="请输入工号，如 EMP-006">
+      </div>
+      <div class="form-item">
+        <label><i>*</i>姓名</label>
+        <input placeholder="请输入姓名">
+      </div>
+    </div>
+    <div class="form-item">
+      <label><i>*</i>部门</label>
+      <select>
+        <option>生产部</option><option>技术部</option>
+        <option>市场部</option><option>人事部</option><option>财务部</option>
+      </select>
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-cancel" data-close="emp">取消</button>
+    <button class="btn btn-ok" data-close="emp" data-ok="员工">确定</button>
+  </div>
+</div>
+
+<!-- ============ 抽屉：新增部门（部门管理） ============ -->
+<div class="drawer-mask" id="mask-dept" data-close="dept"></div>
+<div class="drawer" id="drawer-dept">
+  <div class="drawer-header">
+    <span class="drawer-title">新增部门</span>
+    <span class="drawer-close" data-close="dept">✕</span>
+  </div>
+  <div class="drawer-body">
+    <div class="form-item">
+      <label><i>*</i>部门名称</label>
+      <input placeholder="请输入部门名称">
+    </div>
+    <div class="form-item">
+      <label>部门说明</label>
+      <textarea placeholder="请输入部门说明，如：负责公司生产制造业务"></textarea>
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-cancel" data-close="dept">取消</button>
+    <button class="btn btn-ok" data-close="dept" data-ok="部门">确定</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const toast = document.getElementById('toast');
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 1800);
+  }
+
+  // ===== 页面切换（按模块动态显示 tab） =====
+  const moduleName = { rule: '考核规则', point: '积分激励', base: '基础数据' };
+
+  function switchPage(page) {
+    // 页面显隐
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('show'));
+    document.getElementById('page-' + page).classList.add('show');
+
+    // 子菜单高亮
+    document.querySelectorAll('.sub-child').forEach(m => m.classList.toggle('active', m.dataset.page === page));
+
+    // tab：只显示同模块，且高亮当前
+    let mod = '';
+    document.querySelectorAll('.tab').forEach(t => {
+      if (t.dataset.page === page) mod = t.dataset.module;
+    });
+    document.querySelectorAll('.tab').forEach(t => {
+      const isSameModule = t.dataset.module === mod;
+      t.classList.toggle('visible', isSameModule);
+      t.classList.toggle('active', t.dataset.page === page);
+    });
+
+    // 品牌副标题
+    document.getElementById('brandSub').textContent = moduleName[mod] + ' · 管理后台 v1.0';
+  }
+
+  document.querySelectorAll('.sub-child[data-page]').forEach(m => {
+    m.addEventListener('click', () => switchPage(m.dataset.page));
+  });
+  document.querySelectorAll('.tab[data-page]').forEach(t => {
+    t.addEventListener('click', () => switchPage(t.dataset.page));
+  });
+
+  // ===== 抽屉表单：打开 / 关闭 =====
+  function openDrawer(id) {
+    document.getElementById('mask-' + id).classList.add('show');
+    document.getElementById('drawer-' + id).classList.add('show');
+  }
+  function closeDrawer(id) {
+    document.getElementById('mask-' + id).classList.remove('show');
+    document.getElementById('drawer-' + id).classList.remove('show');
+  }
+
+  document.querySelectorAll('[data-drawer]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openDrawer(btn.dataset.drawer);
+    });
+  });
+
+  document.querySelectorAll('[data-close]').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.close;
+      closeDrawer(id);
+      if (el.classList.contains('btn-ok')) {
+        const name = el.dataset.ok || '记录';
+        if (name === '排名计算') {
+          showToast('排名计算任务已提交，完成后将刷新报表');
+        } else if (name === '考核评分') {
+          showToast('考核完成，考核结果已提交');
+        } else {
+          showToast('已保存' + name + '，新增 1 条');
+        }
+      }
+    });
+  });
+
+  document.querySelectorAll('[data-toast]').forEach(el => {
+    el.addEventListener('click', () => showToast(el.dataset.toast));
+  });
+
+  // ===== 考核目录表单：目录层级 / 数据类型 联动 =====
+  const catalogLevel = document.getElementById('catalogLevel');
+  const dataTypeRow = document.getElementById('dataTypeRow');
+  const dataTypeSel = document.getElementById('dataTypeSel');
+  const dataRangeItem = document.getElementById('dataRangeItem');
+
+  if (catalogLevel) {
+    const syncCatalogForm = () => {
+      const isThird = catalogLevel.value === '三级目录';
+      dataTypeRow.style.display = isThird ? 'flex' : 'none';
+      dataRangeItem.style.display = (isThird && dataTypeSel.value === '数据范围') ? 'block' : 'none';
+    };
+    catalogLevel.addEventListener('change', syncCatalogForm);
+    dataTypeSel.addEventListener('change', syncCatalogForm);
+    syncCatalogForm();
+  }
+
+  // ===== 积分排名报表：周期 tab 切换（月度/季度/年度 数据分离） =====
+  const cycleTabs = document.querySelectorAll('#page-rank .cycle-tab');
+  const rankRows = document.querySelectorAll('#page-rank tbody tr');
+  const rankCount = document.getElementById('rankCount');
+
+  cycleTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const cycle = tab.dataset.cycle;
+      cycleTabs.forEach(t => t.classList.toggle('active', t === tab));
+      let count = 0;
+      rankRows.forEach(row => {
+        const match = row.dataset.cycle === cycle;
+        row.style.display = match ? '' : 'none';
+        if (match) count++;
+      });
+      rankCount.textContent = '共 ' + count + ' 条';
+      showToast('已切换至「' + cycle + '」排名，共 ' + count + ' 条');
+    });
+  });
+
+  // ===== 考核结果：状态 tab 切换（已提交/已确认 数据分离） =====
+  const statusTabs = document.querySelectorAll('#page-result .cycle-tab');
+  const resultRows = document.querySelectorAll('#page-result tbody tr');
+  const resultCount = document.getElementById('resultCount');
+
+  statusTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const status = tab.dataset.status;
+      statusTabs.forEach(t => t.classList.toggle('active', t === tab));
+      let count = 0;
+      resultRows.forEach(row => {
+        const match = row.dataset.status === status;
+        row.style.display = match ? '' : 'none';
+        if (match) count++;
+      });
+      resultCount.textContent = '共 ' + count + ' 条';
+      showToast('已切换至「' + status + '」考核结果，共 ' + count + ' 条');
+    });
+  });
+
+  // ===== 全部页面行多选 =====
+  ['#page-freq', '#page-catalog', '#page-template', '#page-pending', '#page-result',
+   '#page-event', '#page-engine',
+   '#page-detail', '#page-prize', '#page-rank', '#page-deliver',
+   '#page-emp', '#page-dept'].forEach(sel => {
+    document.querySelectorAll(sel + ' tbody tr').forEach(row => {
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('input') || e.target.closest('.actions')) return;
+        row.classList.toggle('active');
+      });
+    });
+  });
+
+  // checkbox 不触发行事件
+  document.querySelectorAll('tbody input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('click', e => e.stopPropagation());
+  });
+
+  // 操作按钮提示
+  document.querySelectorAll('.btn-add:not([data-drawer])').forEach(b => b.addEventListener('click', () => showToast('新增记录')));
+  document.querySelectorAll('.btn-del').forEach(b => b.addEventListener('click', () => showToast('已删除所选项')));
+  document.querySelectorAll('.actions a').forEach(a => {
+    a.addEventListener('click', e => {
+      e.stopPropagation();
+      if (a.dataset.drawer || a.dataset.toast) return; // 带 data-drawer / data-toast 的链接走各自逻辑
+      const tr = a.closest('tr');
+      const nameCell = tr ? tr.querySelector('td:nth-child(2)') : null;
+      showToast(a.textContent + '：' + (nameCell ? nameCell.textContent.trim() : ''));
+    });
+  });
+  document.querySelectorAll('.pagination-left .clear').forEach(c => c.addEventListener('click', () => showToast('已清空选择')));
+  document.querySelectorAll('.filter-bar .btn-primary').forEach(b => b.addEventListener('click', () => showToast('执行筛选')));
+  document.querySelectorAll('.filter-bar .btn-default').forEach(b => b.addEventListener('click', () => showToast('已重置筛选条件')));
+  document.querySelectorAll('.toolbar-right span').forEach(s => s.addEventListener('click', () => showToast(s.textContent.trim())));
+</script>
+</body>
+</html>
